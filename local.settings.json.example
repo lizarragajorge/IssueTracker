@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "SearchEndpoint": "https://<your-search-service>.search.windows.net",
+    "SearchIndexName": "email-rag-index",
+    "OpenAiEndpoint": "https://<your-openai-service>.openai.azure.com",
+    "ChatModelDeployment": "gpt-4o",
+    "StorageAccountName": "<your-storage-account>",
+    "BlobContainerName": "attachments"
+  }
+}

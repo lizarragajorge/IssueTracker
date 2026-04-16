@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailRag.Functions", "EmailRag.Functions.csproj", "{535F8BDF-0F21-2D66-F4D5-E89F61FE4AFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{535F8BDF-0F21-2D66-F4D5-E89F61FE4AFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{535F8BDF-0F21-2D66-F4D5-E89F61FE4AFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{535F8BDF-0F21-2D66-F4D5-E89F61FE4AFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{535F8BDF-0F21-2D66-F4D5-E89F61FE4AFA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {386F45DB-AFA7-4E50-9543-A0BDA59A9037}
+	EndGlobalSection
+EndGlobal

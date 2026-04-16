@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Library Chat</title>
+    <style>
+        :root {
+            --bg: #f4f5f7;
+            --panel: #ffffff;
+            --border: #dfe1e6;
+            --primary: #0052cc;
+            --primary-hover: #0747a6;
+            --text: #172b4d;
+            --muted: #6b778c;
+            --user-bg: #deebff;
+            --bot-bg: #f4f5f7;
+            --radius: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg); height: 100vh; display: flex; }
+
+        /* Layout */
+        .sidebar { width: 340px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main { flex: 1; display: flex; flex-direction: column; }
+
+        /* Sidebar */
+        .sidebar-header { padding: 16px; font-size: 15px; font-weight: 600; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+        .sidebar-header svg { width: 18px; height: 18px; }
+        .sidebar-filter { padding: 8px 16px; border-bottom: 1px solid var(--border); }
+        .sidebar-filter input { width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; }
+        .doc-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+        .doc-item { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+        .doc-item:hover { background: #f0f3f8; }
+        .doc-name { font-size: 13px; font-weight: 500; word-break: break-all; }
+        .doc-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .doc-detail-panel { padding: 16px; border-top: 1px solid var(--border); background: #fafbfc; max-height: 220px; overflow-y: auto; display: none; }
+        .doc-detail-panel.open { display: block; }
+        .doc-detail-panel h4 { font-size: 13px; margin-bottom: 8px; }
+        .doc-detail-panel p { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+        .doc-detail-panel a { font-size: 12px; color: var(--primary); }
+
+        /* Chat area */
+        .chat-header { padding: 16px 24px; font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--border); background: var(--panel); }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .msg { max-width: 75%; padding: 12px 16px; border-radius: var(--radius); font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+        .msg.user { align-self: flex-end; background: var(--user-bg); }
+        .msg.bot { align-self: flex-start; background: var(--bot-bg); border: 1px solid var(--border); }
+        .msg .citations { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+        .msg .citations div { margin-bottom: 2px; }
+        .chat-input-area { padding: 16px 24px; border-top: 1px solid var(--border); background: var(--panel); display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; }
+        .chat-input-area button { padding: 10px 20px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-size: 14px; cursor: pointer; }
+        .chat-input-area button:hover { background: var(--primary-hover); }
+        .chat-input-area button:disabled { opacity: .5; cursor: not-allowed; }
+        .typing { align-self: flex-start; color: var(--muted); font-size: 13px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar: Document Browser -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Documents
+        </div>
+        <div class="sidebar-filter">
+            <input type="text" id="prefixFilter" placeholder="Filter by prefix..." />
+        </div>
+        <div class="doc-list" id="docList"></div>
+        <div class="doc-detail-panel" id="docDetail"></div>
+    </aside>
+
+    <!-- Main: Chat -->
+    <main class="main">
+        <div class="chat-header">Chat with your Document Library</div>
+        <div class="chat-messages" id="messages">
+            <div class="msg bot">Hello! Ask me anything about the documents in the library. I'll search the indexed emails and cite my sources.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="questionInput" placeholder="Ask a question..." autocomplete="off" />
+            <button id="sendBtn">Send</button>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = '';
+        const messagesEl = document.getElementById('messages');
+        const questionInput = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const docList = document.getElementById('docList');
+        const docDetail = document.getElementById('docDetail');
+        const prefixFilter = document.getElementById('prefixFilter');
+
+        // --- Chat ---
+        async function sendQuestion() {
+            const q = questionInput.value.trim();
+            if (!q) return;
+
+            appendMsg(q, 'user');
+            questionInput.value = '';
+            sendBtn.disabled = true;
+
+            const typing = document.createElement('div');
+            typing.className = 'typing';
+            typing.textContent = 'Thinking...';
+            messagesEl.appendChild(typing);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q })
+                });
+                const data = await res.json();
+                typing.remove();
+
+                if (!res.ok) {
+                    appendMsg(`Error: ${data.error || res.statusText}`, 'bot');
+                } else {
+                    appendMsg(data.answer, 'bot', data.citations);
+                }
+            } catch (err) {
+                typing.remove();
+                appendMsg(`Network error: ${err.message}`, 'bot');
+            } finally {
+                sendBtn.disabled = false;
+                questionInput.focus();
+            }
+        }
+
+        function appendMsg(text, role, citations) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            div.textContent = text;
+            if (citations && citations.length) {
+                const c = document.createElement('div');
+                c.className = 'citations';
+                c.innerHTML = '<strong>Sources:</strong>' + citations.map(s =>
+                    `<div>[Source ${s.index}] ${s.title || s.subject || ''} ${s.sender ? '— ' + s.sender : ''} ${s.receivedDate ? '(' + s.receivedDate + ')' : ''}</div>`
+                ).join('');
+                div.appendChild(c);
+            }
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', sendQuestion);
+        questionInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendQuestion(); });
+
+        // --- Document Browser ---
+        let debounceTimer;
+        prefixFilter.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => loadDocuments(prefixFilter.value.trim()), 300);
+        });
+
+        async function loadDocuments(prefix) {
+            const url = prefix ? `${API_BASE}/api/documents?prefix=${encodeURIComponent(prefix)}` : `${API_BASE}/api/documents`;
+            try {
+                const res = await fetch(url);
+                const docs = await res.json();
+                renderDocList(docs);
+            } catch (err) {
+                docList.innerHTML = `<div style="padding:16px;color:red;font-size:13px;">Failed to load documents.</div>`;
+            }
+        }
+
+        function renderDocList(docs) {
+            if (!docs.length) {
+                docList.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:13px;">No documents found.</div>`;
+                return;
+            }
+            docList.innerHTML = docs.map(d => `
+                <div class="doc-item" data-name="${encodeURIComponent(d.name)}">
+                    <div class="doc-name">${escapeHtml(d.name)}</div>
+                    <div class="doc-meta">${formatBytes(d.size)} &middot; ${d.contentType || 'unknown'} &middot; ${d.lastModified ? new Date(d.lastModified).toLocaleDateString() : ''}</div>
+                </div>
+            `).join('');
+
+            docList.querySelectorAll('.doc-item').forEach(el => {
+                el.addEventListener('click', () => showDocDetail(decodeURIComponent(el.dataset.name)));
+            });
+        }
+
+        async function showDocDetail(name) {
+            docDetail.classList.add('open');
+            docDetail.innerHTML = '<p>Loading...</p>';
+            try {
+                const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(name)}`);
+                const d = await res.json();
+                if (!res.ok) { docDetail.innerHTML = `<p style="color:red;">${d.error}</p>`; return; }
+                docDetail.innerHTML = `
+                    <h4>${escapeHtml(d.name)}</h4>
+                    <p><strong>Size:</strong> ${formatBytes(d.size)}</p>
+                    <p><strong>Type:</strong> ${d.contentType || 'unknown'}</p>
+                    <p><strong>Modified:</strong> ${d.lastModified ? new Date(d.lastModified).toLocaleString() : 'N/A'}</p>
+                    ${d.metadata && Object.keys(d.metadata).length ? `<p><strong>Metadata:</strong> ${Object.entries(d.metadata).map(([k,v]) => `${k}=${v}`).join(', ')}</p>` : ''}
+                    <a href="${d.downloadUrl}" target="_blank" rel="noopener">Download</a>
+                `;
+            } catch (err) {
+                docDetail.innerHTML = `<p style="color:red;">Error loading details.</p>`;
+            }
+        }
+
+        function formatBytes(b) {
+            if (b === 0) return '0 B';
+            const k = 1024, s = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(b) / Math.log(k));
+            return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+        }
+
+        function escapeHtml(t) {
+            const d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+
+        // Initial load
+        loadDocuments('');
+    </script>
+</body>
+</html>

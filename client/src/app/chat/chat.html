@@ -1,0 +1,45 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    Chat with your Document Library
+  </div>
+
+  <div class="chat-messages" #messagesContainer>
+    @for (msg of messages(); track $index) {
+      <div class="msg" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'bot'">
+        <div class="msg-text">{{ msg.text }}</div>
+        @if (msg.citations?.length) {
+          <div class="citations">
+            <strong>Sources:</strong>
+            @for (c of msg.citations; track c.index) {
+              <div class="citation">
+                [Source {{ c.index }}]
+                {{ c.title || c.subject || '' }}
+                @if (c.sender) { &mdash; {{ c.sender }} }
+                @if (c.receivedDate) { ({{ c.receivedDate }}) }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+    @if (loading()) {
+      <div class="typing">Thinking...</div>
+    }
+  </div>
+
+  <div class="chat-input-area">
+    <input
+      type="text"
+      placeholder="Ask a question..."
+      [ngModel]="question()"
+      (ngModelChange)="question.set($event)"
+      (keydown)="onKeydown($event)"
+      [disabled]="loading()"
+      autocomplete="off"
+    />
+    <button (click)="send()" [disabled]="loading() || !question().trim()">Send</button>
+  </div>
+</div>
